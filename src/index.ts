@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
-import router from "./routes/subjects";
+import subjectsRouter from "./routes/subjects";
+import usersRouter from "./routes/users";
+import classesRouter from "./routes/classes";
 import cors from "cors";
 
 const app = express();
@@ -20,7 +22,9 @@ app.use(
 // parse JSON request bodies
 app.use(express.json());
 
-app.use("/api/subjects", router);
+app.use("/api/subjects", subjectsRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/classes", classesRouter);
 
 // root route
 app.get("/", (_req: Request, res: Response) => {
@@ -31,4 +35,4 @@ app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
 
-export default router;
+export default subjectsRouter;
