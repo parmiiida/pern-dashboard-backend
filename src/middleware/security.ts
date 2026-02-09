@@ -66,7 +66,7 @@ const securityMidleware = async (
       });
     }
     if (decision.isDenied() && decision.reason.isRateLimit()) {
-      return res.status(403).json({
+      return res.status(429).json({
         error: "Too many request",
         message: "Something went wrong with security middleware",
       });
