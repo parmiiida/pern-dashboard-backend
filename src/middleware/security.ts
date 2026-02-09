@@ -8,7 +8,12 @@ const securityMidleware = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (process.env.NODE_ENV === "TEST") return next();
+  if (
+    process.env.NODE_ENV === "TEST" ||
+    process.env.NODE_ENV === "development" ||
+    !process.env.NODE_ENV
+  )
+    return next();
 
   try {
     const role: RatelimitRole = req.user?.role ?? "student";
@@ -28,6 +33,7 @@ const securityMidleware = async (
       case "student":
         limit = 10;
         message = "Student request limit exceeded (10 per minute)";
+        break;
       default:
         limit = 5;
         message =
