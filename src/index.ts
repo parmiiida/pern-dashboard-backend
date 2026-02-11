@@ -35,6 +35,28 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ].filter(Boolean) as string[];
 
+const FRONTEND_ORIGIN = "https://pern-dashboard-up2l.vercel.app";
+
+// 1) OPTIONS (preflight) EN BAŞTA – cors paketine bırakmadan hemen yanıtla
+app.use((req, res, next) => {
+  if (req.method !== "OPTIONS") return next();
+  const origin = req.headers.origin;
+  const allowOrigin =
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : FRONTEND_ORIGIN;
+  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.status(204).end();
+});
+
 function corsOriginFn(
   origin: string | undefined,
   cb: (err: Error | null, allow?: boolean | string) => void
@@ -64,24 +86,6 @@ app.get("/", (_, res) => {
 
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// CORS preflight (OPTIONS): /api/auth/* için başlıkları garanti et
-app.use("/api/auth", (req, res, next) => {
-  if (req.method === "OPTIONS") {
-    const origin = req.headers.origin;
-    const allowOrigin =
-      origin && ALLOWED_ORIGINS.includes(origin)
-        ? origin
-        : ALLOWED_ORIGINS[0] ?? "https://pern-dashboard-up2l.vercel.app";
-    res.setHeader("Access-Control-Allow-Origin", allowOrigin);
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Max-Age", "86400");
-    return res.status(204).end();
-  }
-  next();
-});
 
 // Better Auth: handle ALL /api/auth/* requests. express.json() SONRA olmalı (dokümante).
 const authHandler = toNodeHandler(auth);
