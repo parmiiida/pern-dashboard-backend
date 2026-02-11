@@ -54,6 +54,22 @@ app.get("/", (_, res) => {
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// CORS preflight (OPTIONS) için /api/auth/* önce açıkça yanıtla; yoksa "No Access-Control-Allow-Origin" hatası oluşabiliyor
+app.use("/api/auth", (req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = corsOrigin || req.headers.origin;
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.status(204).end();
+  }
+  next();
+});
+
 // Better Auth: handle ALL /api/auth/* requests. express.json() SONRA olmalı (dokümante).
 const authHandler = toNodeHandler(auth);
 app.use("/api/auth", (req, res) => {
