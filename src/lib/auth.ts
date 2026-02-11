@@ -6,7 +6,7 @@ import * as schema from "../db/schema/auth.js";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:8000",
-  basePath: "/api",
+  basePath: "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET!,
   trustedOrigins: [process.env.FRONTEND_URL!],
   database: drizzleAdapter(db, {

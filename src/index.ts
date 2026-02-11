@@ -27,7 +27,12 @@ app.use(
   })
 );
 
-app.all("/api/auth/*splat", toNodeHandler(auth));
+// Better Auth: handle all /api/auth/* requests. Must be before express.json().
+const authHandler = toNodeHandler(auth);
+app.use("/api/auth", (req, res) => {
+  req.url = req.originalUrl; // Better Auth needs full path to match basePath
+  authHandler(req, res);
+});
 
 app.use(express.json());
 
