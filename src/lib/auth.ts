@@ -4,11 +4,16 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db/index.js"; // your drizzle instance
 import * as schema from "../db/schema/auth.js";
 
+const baseURL =
+  process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:8000";
+const frontendUrl = process.env.FRONTEND_URL;
+const trustedOrigins = frontendUrl ? [frontendUrl] : [];
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_BASE_URL ?? "http://localhost:8000",
+  baseURL,
   basePath: "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET!,
-  trustedOrigins: [process.env.FRONTEND_URL!],
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

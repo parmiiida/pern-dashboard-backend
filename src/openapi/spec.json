@@ -1,0 +1,373 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Classroom Management API",
+    "version": "1.0.0",
+    "description": "API documentation for Classroom Management System",
+    "contact": {
+      "name": "API Support",
+      "email": "support@classroom.com"
+    }
+  },
+  "servers": [
+    { "url": "http://localhost:8000", "description": "Local dev server" },
+    { "url": "https://api.classroom.refine.dev", "description": "Production API server" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "better-auth.session"
+      }
+    },
+    "schemas": {
+      "Class": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string", "maxLength": 255 },
+          "inviteCode": { "type": "string", "maxLength": 20 },
+          "subjectId": { "type": "integer" },
+          "teacherId": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "bannerUrl": { "type": "string", "nullable": true },
+          "bannerCldPubId": { "type": "string", "nullable": true, "description": "Cloudinary public id for banner" },
+          "capacity": { "type": "integer", "default": 50 },
+          "status": { "type": "string", "enum": ["active", "inactive", "archived"], "default": "active" },
+          "schedules": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" }, "default": [] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "inviteCode", "subjectId", "teacherId", "status", "schedules", "createdAt", "updatedAt"],
+        "additionalProperties": false
+      },
+      "ClassCreate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "maxLength": 255 },
+          "inviteCode": { "type": "string", "maxLength": 20 },
+          "subjectId": { "type": "integer" },
+          "teacherId": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "bannerUrl": { "type": "string", "nullable": true },
+          "bannerCldPubId": { "type": "string", "nullable": true },
+          "capacity": { "type": "integer" },
+          "status": { "type": "string", "enum": ["active", "inactive", "archived"] },
+          "schedules": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" } }
+        },
+        "required": ["name", "inviteCode", "subjectId", "teacherId"],
+        "additionalProperties": false
+      },
+      "ClassUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "maxLength": 255 },
+          "inviteCode": { "type": "string", "maxLength": 20 },
+          "subjectId": { "type": "integer" },
+          "teacherId": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "bannerUrl": { "type": "string", "nullable": true },
+          "bannerCldPubId": { "type": "string", "nullable": true },
+          "capacity": { "type": "integer" },
+          "status": { "type": "string", "enum": ["active", "inactive", "archived"] },
+          "schedules": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" } }
+        },
+        "additionalProperties": false
+      },
+      "Department": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "code": { "type": "string", "maxLength": 50 },
+          "name": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "code", "name", "createdAt", "updatedAt"],
+        "additionalProperties": false
+      },
+      "DepartmentCreate": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "maxLength": 50 },
+          "name": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string", "nullable": true }
+        },
+        "required": ["code", "name"],
+        "additionalProperties": false
+      },
+      "DepartmentUpdate": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "maxLength": 50 },
+          "name": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "Enrollment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "studentId": { "type": "string" },
+          "classId": { "type": "integer" },
+          "enrolledAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "studentId", "classId", "enrolledAt", "updatedAt"],
+        "additionalProperties": false
+      },
+      "EnrollmentCreate": {
+        "type": "object",
+        "properties": { "classId": { "type": "integer" } },
+        "required": ["classId"],
+        "additionalProperties": false
+      },
+      "EnrollmentJoin": {
+        "type": "object",
+        "properties": { "inviteCode": { "type": "string" } },
+        "required": ["inviteCode"],
+        "additionalProperties": false
+      },
+      "EnrollmentUpdate": {
+        "type": "object",
+        "properties": { "classId": { "type": "integer" }, "studentId": { "type": "string" } },
+        "additionalProperties": false
+      },
+      "Subject": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "departmentId": { "type": "integer" },
+          "name": { "type": "string", "maxLength": 255 },
+          "code": { "type": "string", "maxLength": 50 },
+          "description": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "departmentId", "name", "code", "createdAt", "updatedAt"],
+        "additionalProperties": false
+      },
+      "SubjectCreate": {
+        "type": "object",
+        "properties": {
+          "departmentId": { "type": "integer" },
+          "name": { "type": "string", "maxLength": 255 },
+          "code": { "type": "string", "maxLength": 50 },
+          "description": { "type": "string", "nullable": true }
+        },
+        "required": ["departmentId", "name", "code"],
+        "additionalProperties": false
+      },
+      "SubjectUpdate": {
+        "type": "object",
+        "properties": {
+          "departmentId": { "type": "integer" },
+          "name": { "type": "string", "maxLength": 255 },
+          "code": { "type": "string", "maxLength": 50 },
+          "description": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "SubjectWithDepartment": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Subject" },
+          { "type": "object", "properties": { "department": { "$ref": "#/components/schemas/Department" } }, "required": ["department"], "additionalProperties": false }
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "image": { "type": "string", "nullable": true },
+          "imageCldPubId": { "type": "string", "nullable": true },
+          "role": { "type": "string", "enum": ["admin", "teacher", "student"], "default": "student" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "email", "emailVerified", "role", "createdAt", "updatedAt"],
+        "additionalProperties": false
+      },
+      "UserCreate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "role": { "type": "string", "enum": ["admin", "teacher", "student"] },
+          "image": { "type": "string", "nullable": true },
+          "imageCldPubId": { "type": "string", "nullable": true }
+        },
+        "required": ["id", "name", "email", "role"],
+        "additionalProperties": false
+      },
+      "UserUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "role": { "type": "string", "enum": ["admin", "teacher", "student"] },
+          "image": { "type": "string", "nullable": true },
+          "imageCldPubId": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      },
+      "RegistrationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "description": "Machine-readable error code" },
+          "message": { "type": "string", "description": "Human-readable error message" }
+        },
+        "required": ["code", "message"],
+        "additionalProperties": true
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "day": { "type": "string", "description": "Day of week (e.g., Mon, Tue)" },
+          "startTime": { "type": "string", "description": "Start time (HH:mm)" },
+          "endTime": { "type": "string", "description": "End time (HH:mm)" }
+        },
+        "required": ["day", "startTime", "endTime"],
+        "additionalProperties": false
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": { "page": { "type": "integer" }, "limit": { "type": "integer" }, "total": { "type": "integer" }, "totalPages": { "type": "integer" } },
+        "required": ["page", "limit", "total", "totalPages"],
+        "additionalProperties": false,
+        "description": "Pagination metadata returned by list endpoints."
+      },
+      "DepartmentListItem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Department" },
+          { "type": "object", "properties": { "totalSubjects": { "type": "integer", "minimum": 0 } }, "required": ["totalSubjects"], "additionalProperties": false }
+        ]
+      },
+      "DepartmentTotals": {
+        "type": "object",
+        "properties": {
+          "subjects": { "type": "integer", "minimum": 0 },
+          "classes": { "type": "integer", "minimum": 0 },
+          "enrolledStudents": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["subjects", "classes", "enrolledStudents"],
+        "additionalProperties": false
+      },
+      "DepartmentWithTotals": {
+        "type": "object",
+        "properties": {
+          "department": { "$ref": "#/components/schemas/Department" },
+          "totals": { "$ref": "#/components/schemas/DepartmentTotals" }
+        },
+        "required": ["department", "totals"],
+        "additionalProperties": false
+      }
+    },
+    "parameters": {
+      "Page": { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+      "Limit": { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 10 } },
+      "DepartmentId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "SubjectId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "ClassId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "UserId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+      "PageParam": { "name": "page", "in": "query", "description": "Page number (1-based)", "schema": { "type": "integer", "default": 1, "minimum": 1 } },
+      "LimitParam": { "name": "limit", "in": "query", "description": "Items per page", "schema": { "type": "integer", "default": 10, "minimum": 1 } },
+      "SearchParam": { "name": "search", "in": "query", "description": "Free-text search", "schema": { "type": "string" } }
+    }
+  },
+  "security": [{ "cookieAuth": [] }],
+  "paths": {
+    "/api/auth/get-session": {
+      "get": {
+        "summary": "Get current session",
+        "description": "Returns the currently authenticated user's session and user information. If no valid session exists, returns null.",
+        "tags": ["Auth"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Session information or null if not authenticated", "content": { "application/json": { "schema": { "oneOf": [{ "type": "object", "properties": { "user": { "type": "object" }, "session": { "type": "object" } }, "required": ["user", "session"], "additionalProperties": true }, { "type": "null" }] } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } }, "required": ["error"] } } }
+        }
+      }
+    },
+    "/api/auth/sign-in/email": {
+      "post": {
+        "summary": "Sign in with email",
+        "description": "Signs in and sets session cookie.",
+        "tags": ["Auth"],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string" } } } } },
+        "responses": {
+          "200": { "description": "Signed in, session cookie set", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } }, "required": ["user"], "additionalProperties": false } } },
+          "401": { "description": "Invalid credentials", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } }
+        },
+        "security": [{ "cookieAuth": [] }]
+      }
+    },
+    "/api/auth/sign-out": {
+      "post": {
+        "summary": "Sign out",
+        "description": "Clears the session cookie.",
+        "tags": ["Auth"],
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Signed out" }, "401": { "description": "Not authenticated", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } } }
+      }
+    },
+    "/api/auth/sign-up/email": {
+      "post": {
+        "summary": "Sign up with email",
+        "description": "Creates a new account and signs the user in. Sets session cookie.",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "name", "role"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "name": { "type": "string" },
+                  "role": { "type": "string", "enum": ["admin", "teacher", "student"] },
+                  "imageCldPubId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Signed up, session cookie set", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "type": "object" }, "session": { "type": "object" } }, "additionalProperties": true } } },
+          "400": { "description": "Request validation or registration error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrationErrorResponse" } } },
+          "409": { "description": "Email already exists", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } }
+        },
+        "security": [{ "cookieAuth": [] }]
+      }
+    },
+    "/api/auth/update-user": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Update current user",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  },
+  "tags": [{ "name": "Auth", "description": "Authentication (Better Auth) endpoints" }]
+}

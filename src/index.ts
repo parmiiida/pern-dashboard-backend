@@ -4,9 +4,17 @@ import('apminsight')
 
 import cors from "cors";
 import express from "express";
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+import swaggerUi from "swagger-ui-express";
 import { toNodeHandler } from "better-auth/node";
 
 import subjectsRouter from "./routes/subjects.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const swaggerPath = join(__dirname, "openapi", "spec.json");
+const swaggerDocument = JSON.parse(readFileSync(swaggerPath, "utf-8"));
 import usersRouter from "./routes/users.js";
 import classesRouter from "./routes/classes.js";
 import departmentsRouter from "./routes/departments.js";
@@ -36,6 +44,9 @@ app.get("/health", (_, res) => {
 app.get("/", (_, res) => {
   res.send("Backend server is running!");
 });
+
+// Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Better Auth: handle ALL /api/auth/* requests. Must be before express.json().
 const authHandler = toNodeHandler(auth);
