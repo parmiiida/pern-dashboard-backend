@@ -54,7 +54,7 @@ app.get("/", (_, res) => {
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Better Auth: handle ALL /api/auth/* requests. Must be before express.json().
+// Better Auth: handle ALL /api/auth/* requests. express.json() SONRA olmalı (dokümante).
 const authHandler = toNodeHandler(auth);
 app.use("/api/auth", (req, res) => {
   req.url = req.originalUrl;

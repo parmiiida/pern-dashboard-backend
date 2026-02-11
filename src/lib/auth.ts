@@ -27,6 +27,10 @@ export const auth = betterAuth({
     defaultCookieAttributes: isProduction
       ? { sameSite: "none" as const, secure: true }
       : undefined,
+    // Sadece sorun giderme için: Railway'de BETTER_AUTH_DISABLE_CSRF=true deneyin; çalışırsa CSRF/origin kaynaklıdır. Sonra kapatın.
+    ...(process.env.BETTER_AUTH_DISABLE_CSRF === "true" && {
+      disableCSRFCheck: true,
+    }),
   },
   database: drizzleAdapter(db, {
     provider: "pg",
