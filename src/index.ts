@@ -17,22 +17,31 @@ if (!process.env.FRONTEND_URL) {
   throw new Error("FRONTEND_URL is not defined in environment variables");
 }
 
+// Virgülle ayrılmış birden fazla origin desteklenir (örn. prod + local dev)
+const allowedOrigins = process.env.FRONTEND_URL.split(",").map((o) => o.trim());
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(null, false);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
 // Better Auth: /api/sign-up/email, /api/sign-in/email, /api/get-session, vb.
-// app.use("/api", ...) içinde req.path mount sonrasıdır: /api/users → req.path = "/users"
+// Sadece /api/subjects, /api/users, /api/classes REST route'larına next(); diğerleri auth'a.
+// originalUrl kullanıyoruz (path mount'tan bağımsız, her ortamda tutarlı).
 app.use("/api", (req, res, next) => {
-  const path = req.path;
+  const apiPath = req.originalUrl?.split("?")[0] ?? req.url ?? "";
   if (
-    path.startsWith("/subjects") ||
-    path.startsWith("/users") ||
-    path.startsWith("/classes")
+    apiPath.startsWith("/api/subjects") ||
+    apiPath.startsWith("/api/users") ||
+    apiPath.startsWith("/api/classes")
   ) {
     return next();
   }
