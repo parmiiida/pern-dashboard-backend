@@ -27,9 +27,15 @@ import { auth } from "./lib/auth.js";
 const app = express();
 const PORT = Number(process.env.PORT) || 8000;
 
+const corsOrigin =
+  process.env.FRONTEND_URL?.replace(/\/$/, "") ||
+  (process.env.BETTER_AUTH_BASE_URL?.startsWith("https://")
+    ? "https://pern-dashboard-up2l.vercel.app"
+    : undefined);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL, // React app URL
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
