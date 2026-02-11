@@ -1,3 +1,11 @@
+/**
+ * Better Auth core schema (Drizzle + Postgres).
+ * @see https://better-auth.com/docs/concepts/database (Core Schema)
+ * @see https://www.better-auth.com/docs/adapters/drizzle
+ *
+ * Tables: user, session, account, verification (singular names per Better Auth).
+ * Extra user fields: role (enum, default "student"), imageCldPubId (optional).
+ */
 import { relations } from "drizzle-orm";
 import {
   boolean,
@@ -19,6 +27,7 @@ const timestamps = {
 
 export const roleEnum = pgEnum("role", ["student", "teacher", "admin"]);
 
+/** Better Auth user table + role & imageCldPubId. user.id remains text PK. */
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -27,7 +36,6 @@ export const user = pgTable("user", {
   image: text("image"),
   role: roleEnum("role").notNull().default("student"),
   imageCldPubId: text("image_cld_pub_id"),
-
   ...timestamps,
 });
 
