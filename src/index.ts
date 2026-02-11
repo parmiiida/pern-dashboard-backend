@@ -17,20 +17,30 @@ import enrollmentsRouter from "./routes/enrollments.js";
 import { auth } from "./lib/auth.js";
 
 const app = express();
-const PORT = 8000;
+const PORT = Number(process.env.PORT) || 8000;
 
 app.use(
   cors({
     origin: process.env.FRONTEND_URL, // React app URL
-    methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed HTTP methods
-    credentials: true, // allow cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Better Auth: handle all /api/auth/* requests. Must be before express.json().
+// Health check – confirms backend is reachable (e.g. Railway)
+app.get("/health", (_, res) => {
+  res.json({ ok: true, service: "backend" });
+});
+
+app.get("/", (_, res) => {
+  res.send("Backend server is running!");
+});
+
+// Better Auth: handle ALL /api/auth/* requests. Must be before express.json().
 const authHandler = toNodeHandler(auth);
 app.use("/api/auth", (req, res) => {
-  req.url = req.originalUrl; // Better Auth needs full path to match basePath
+  req.url = req.originalUrl;
   authHandler(req, res);
 });
 
@@ -45,10 +55,15 @@ app.use("/api/departments", departmentsRouter);
 app.use("/api/stats", statsRouter);
 app.use("/api/enrollments", enrollmentsRouter);
 
-app.get("/", (req, res) => {
-  res.send("Backend server is running!");
+// 404 – so we get a JSON body and can see if request reached Express
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Not Found",
+    path: req.originalUrl,
+    message: "No route matched. Check base URL and path.",
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
