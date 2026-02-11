@@ -27,15 +27,26 @@ import { auth } from "./lib/auth.js";
 const app = express();
 const PORT = Number(process.env.PORT) || 8000;
 
-const corsOrigin =
-  process.env.FRONTEND_URL?.replace(/\/$/, "") ||
-  (process.env.BETTER_AUTH_BASE_URL?.startsWith("https://")
-    ? "https://pern-dashboard-up2l.vercel.app"
-    : undefined);
+// CORS: env yoksa bile production frontend çalışsın
+const ALLOWED_ORIGINS = [
+  "https://pern-dashboard-up2l.vercel.app",
+  process.env.FRONTEND_URL?.replace(/\/$/, ""),
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean) as string[];
+
+function corsOriginFn(
+  origin: string | undefined,
+  cb: (err: Error | null, allow?: boolean | string) => void
+) {
+  if (!origin) return cb(null, true);
+  if (ALLOWED_ORIGINS.includes(origin)) return cb(null, origin);
+  return cb(null, false);
+}
 
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: corsOriginFn,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -54,13 +65,15 @@ app.get("/", (_, res) => {
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// CORS preflight (OPTIONS) için /api/auth/* önce açıkça yanıtla; yoksa "No Access-Control-Allow-Origin" hatası oluşabiliyor
+// CORS preflight (OPTIONS): /api/auth/* için başlıkları garanti et
 app.use("/api/auth", (req, res, next) => {
   if (req.method === "OPTIONS") {
-    const origin = corsOrigin || req.headers.origin;
-    if (origin) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
+    const origin = req.headers.origin;
+    const allowOrigin =
+      origin && ALLOWED_ORIGINS.includes(origin)
+        ? origin
+        : ALLOWED_ORIGINS[0] ?? "https://pern-dashboard-up2l.vercel.app";
+    res.setHeader("Access-Control-Allow-Origin", allowOrigin);
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Allow-Credentials", "true");
