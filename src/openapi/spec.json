@@ -18,7 +18,7 @@
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "better-auth.session"
+        "name": "session"
       }
     },
     "schemas": {
@@ -288,86 +288,5 @@
     }
   },
   "security": [{ "cookieAuth": [] }],
-  "paths": {
-    "/api/auth/get-session": {
-      "get": {
-        "summary": "Get current session",
-        "description": "Returns the currently authenticated user's session and user information. If no valid session exists, returns null.",
-        "tags": ["Auth"],
-        "security": [{ "cookieAuth": [] }],
-        "responses": {
-          "200": { "description": "Session information or null if not authenticated", "content": { "application/json": { "schema": { "oneOf": [{ "type": "object", "properties": { "user": { "type": "object" }, "session": { "type": "object" } }, "required": ["user", "session"], "additionalProperties": true }, { "type": "null" }] } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } }, "required": ["error"] } } }
-        }
-      }
-    },
-    "/api/auth/sign-in/email": {
-      "post": {
-        "summary": "Sign in with email",
-        "description": "Signs in and sets session cookie.",
-        "tags": ["Auth"],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["email", "password"], "properties": { "email": { "type": "string", "format": "email" }, "password": { "type": "string" } } } } },
-        "responses": {
-          "200": { "description": "Signed in, session cookie set", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } }, "required": ["user"], "additionalProperties": false } } },
-          "401": { "description": "Invalid credentials", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } }
-        },
-        "security": [{ "cookieAuth": [] }]
-      }
-    },
-    "/api/auth/sign-out": {
-      "post": {
-        "summary": "Sign out",
-        "description": "Clears the session cookie.",
-        "tags": ["Auth"],
-        "security": [{ "cookieAuth": [] }],
-        "responses": { "200": { "description": "Signed out" }, "401": { "description": "Not authenticated", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } } }
-      }
-    },
-    "/api/auth/sign-up/email": {
-      "post": {
-        "summary": "Sign up with email",
-        "description": "Creates a new account and signs the user in. Sets session cookie.",
-        "tags": ["Auth"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["email", "password", "name", "role"],
-                "properties": {
-                  "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string" },
-                  "name": { "type": "string" },
-                  "role": { "type": "string", "enum": ["admin", "teacher", "student"] },
-                  "imageCldPubId": { "type": "string" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Signed up, session cookie set", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "type": "object" }, "session": { "type": "object" } }, "additionalProperties": true } } },
-          "400": { "description": "Request validation or registration error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrationErrorResponse" } } },
-          "409": { "description": "Email already exists", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string" } } } } }
-        },
-        "security": [{ "cookieAuth": [] }]
-      }
-    },
-    "/api/auth/update-user": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Update current user",
-        "security": [{ "cookieAuth": [] }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
-        "responses": {
-          "200": { "description": "OK" },
-          "400": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-          "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
-        }
-      }
-    }
-  },
-  "tags": [{ "name": "Auth", "description": "Authentication (Better Auth) endpoints" }]
+  "paths": {}
 }

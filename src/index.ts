@@ -8,7 +8,6 @@ import { readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
-import { toNodeHandler } from "better-auth/node";
 
 import subjectsRouter from "./routes/subjects.js";
 
@@ -22,28 +21,47 @@ import statsRouter from "./routes/stats.js";
 import enrollmentsRouter from "./routes/enrollments.js";
 
 // import securityMiddleware from "./middleware/security.js";
-import { auth } from "./lib/auth.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8000;
 
-// CORS: env yoksa bile production frontend çalışsın
+// CORS: production + localhost (frontend from local dev)
 const ALLOWED_ORIGINS = [
   "https://pern-dashboard-up2l.vercel.app",
   process.env.FRONTEND_URL?.replace(/\/$/, ""),
   "http://localhost:5173",
   "http://localhost:3000",
+  "http://localhost:5174",
+  "http://localhost:5001",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5001",
 ].filter(Boolean) as string[];
 
-const FRONTEND_ORIGIN = "https://pern-dashboard-up2l.vercel.app";
+const normalizeOrigin = (o: string | undefined) =>
+  typeof o === "string" ? o.replace(/\/$/, "") : undefined;
 
-// 1) OPTIONS (preflight) EN BAŞTA – cors paketine bırakmadan hemen yanıtla
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return false;
+  const n = normalizeOrigin(origin);
+  return n !== undefined && ALLOWED_ORIGINS.some((a) => normalizeOrigin(a) === n);
+}
+
+function getAllowedOrigin(origin: string | undefined): string | null {
+  if (!origin) return null;
+  if (isOriginAllowed(origin)) return origin;
+  return null;
+}
+
+// CORS headers on every response (so 4xx/5xx and OPTIONS all have them)
 app.use((req, res, next) => {
-  if (req.method !== "OPTIONS") return next();
-  const origin = req.headers.origin;
-  const allowOrigin =
-    origin && ALLOWED_ORIGINS.includes(origin) ? origin : FRONTEND_ORIGIN;
-  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  const origin = req.headers.origin as string | undefined;
+  const allow = getAllowedOrigin(origin);
+  if (allow) {
+    res.setHeader("Access-Control-Allow-Origin", allow);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
@@ -52,23 +70,20 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization"
   );
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Max-Age", "86400");
-  res.status(204).end();
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.status(204).end();
+  }
+  next();
 });
-
-function corsOriginFn(
-  origin: string | undefined,
-  cb: (err: Error | null, allow?: boolean | string) => void
-) {
-  if (!origin) return cb(null, true);
-  if (ALLOWED_ORIGINS.includes(origin)) return cb(null, origin);
-  return cb(null, false);
-}
 
 app.use(
   cors({
-    origin: corsOriginFn,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      const allow = getAllowedOrigin(origin);
+      return cb(null, allow !== null ? allow : false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -86,13 +101,6 @@ app.get("/", (_, res) => {
 
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// Better Auth: handle ALL /api/auth/* requests. express.json() SONRA olmalı (dokümante).
-const authHandler = toNodeHandler(auth);
-app.use("/api/auth", (req, res) => {
-  req.url = req.originalUrl;
-  authHandler(req, res);
-});
 
 app.use(express.json());
 
