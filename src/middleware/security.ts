@@ -3,8 +3,12 @@ import { slidingWindow } from "@arcjet/node";
 import aj from "../config/arcjet.js";
 import { ArcjetNodeRequest } from "@arcjet/node";
 
+type RequestWithUser = Request & {
+  user?: { role?: "admin" | "teacher" | "student" | "guest" };
+};
+
 const securityMidleware = async (
-  req: Request,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction,
 ) => {
@@ -16,7 +20,7 @@ const securityMidleware = async (
     return next();
 
   try {
-    const role: RatelimitRole = req.user?.role ?? "student";
+    const role = (req.user?.role ?? "student") as "admin" | "teacher" | "student" | "guest";
 
     let limit: number;
     let message: string;
