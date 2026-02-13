@@ -19,6 +19,7 @@ import classesRouter from "./routes/classes.js";
 import departmentsRouter from "./routes/departments.js";
 import statsRouter from "./routes/stats.js";
 import enrollmentsRouter from "./routes/enrollments.js";
+import authRouter from "./routes/auth.js";
 
 // import securityMiddleware from "./middleware/security.js";
 
@@ -90,6 +91,18 @@ app.use(
   })
 );
 
+// Parse JSON body; accept even when Content-Type is missing (some clients omit it)
+app.use(
+  express.json({
+    type: (req) => {
+      const method = req.method ?? "";
+      if (!["POST", "PUT", "PATCH"].includes(method)) return false;
+      const ct = (req.headers["content-type"] ?? "").toLowerCase();
+      return ct.includes("application/json") || ct === "";
+    },
+  })
+);
+
 // Health check – confirms backend is reachable (e.g. Railway)
 app.get("/health", (_, res) => {
   res.json({ ok: true, service: "backend" });
@@ -102,10 +115,9 @@ app.get("/", (_, res) => {
 // Swagger UI – API docs at /api-docs (serves the Classroom Management API OpenAPI spec)
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use(express.json());
-
 // app.use(securityMiddleware);
 
+app.use("/api/auth", authRouter);
 app.use("/api/subjects", subjectsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/classes", classesRouter);
